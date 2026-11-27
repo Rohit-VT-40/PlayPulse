@@ -1,3 +1,8 @@
+// Feature Flags (under testing: set to true when ready for release, or open ?beta=1 locally)
+const FEATURES = {
+  performanceTab: new URLSearchParams(window.location.search).get('beta') === '1'
+};
+
 // State
 const state = {
   mode: 'company', // 'company' | 'keyword' | 'trending' | 'radar'
@@ -183,8 +188,24 @@ const themeToggleBtn = document.getElementById('themeToggleBtn');
 
 // Initialize
 initTheme();
+applyFeatureFlags();
 setupEventListeners();
 fetchWatchlist();
+
+function applyFeatureFlags() {
+  const perfTabBtn = document.querySelector('.modal-tab[data-tab="performance"]');
+  const perfTabContent = document.getElementById('tabPerformance');
+  if (!FEATURES.performanceTab) {
+    if (perfTabBtn) perfTabBtn.style.display = 'none';
+    if (perfTabContent) {
+      perfTabContent.style.display = 'none';
+      perfTabContent.classList.remove('active');
+    }
+  } else {
+    if (perfTabBtn) perfTabBtn.style.display = '';
+    if (perfTabContent) perfTabContent.style.display = '';
+  }
+}
 
 function setupEventListeners() {
   // Mode selection
@@ -1671,11 +1692,16 @@ function openAppModal(app) {
   // Screenshots
   renderScreenshots(app.screenshots || []);
 
-  // Performance & User Velocity Trends
-  renderPerformanceAndTrends(app);
-
-  // Set default tab to Performance & Velocity
-  modalTabs[0].click();
+  // Performance & User Velocity Trends (hidden behind feature flag while under testing)
+  applyFeatureFlags();
+  if (FEATURES.performanceTab) {
+    renderPerformanceAndTrends(app);
+    const perfTab = document.querySelector('.modal-tab[data-tab="performance"]');
+    if (perfTab) perfTab.click();
+  } else {
+    const reviewsTab = document.querySelector('.modal-tab[data-tab="reviews"]');
+    if (reviewsTab) reviewsTab.click();
+  }
 
   // Load live reviews in background
   loadLiveReviews(app.appId);
