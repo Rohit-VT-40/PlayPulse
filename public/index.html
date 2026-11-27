@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.9">
+  <link rel="stylesheet" href="style.css?v=3.0">
 </head>
 <body>
   <div class="app-layout">
@@ -72,6 +72,26 @@
             </div>
           </div>
           <span class="sidebar-count-badge" id="sidebarWatchlistBadge">0</span>
+        </div>
+
+        <!-- Active List Switcher + Quick Create (+) -->
+        <div class="sidebar-list-switcher">
+          <div class="sidebar-list-select-row">
+            <select id="sidebarListSelect" class="sidebar-list-select" aria-label="Select watchlist">
+              <option value="global">Global Watchlist</option>
+            </select>
+            <button type="button" id="sidebarCreateListBtn" class="icon-plus-btn" title="Create New List" aria-label="Create new list">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+          <div id="sidebarNewListForm" class="sidebar-new-list-form" style="display: none;">
+            <input type="text" id="sidebarNewListInput" class="sidebar-new-list-input" placeholder="List name (e.g. Hyper Casual)..." autocomplete="off">
+            <button type="button" id="sidebarNewListSaveBtn" class="sidebar-inline-save-btn" title="Create List">Add</button>
+            <button type="button" id="sidebarNewListCancelBtn" class="sidebar-inline-cancel-btn" title="Cancel">✕</button>
+          </div>
         </div>
 
         <div class="sidebar-filter-wrap">
@@ -257,16 +277,27 @@
               </div>
 
               <div class="radar-filter-field watchlist-btn-field">
-                <label>Monitored Studios:</label>
-                <button type="button" id="openWatchlistModalBtn" class="action-btn-secondary watchlist-trigger-btn">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  <span>Competitor Watchlist (<strong id="radarWatchlistCount">0</strong>)</span>
-                </button>
+                <label>Target Studio List:</label>
+                <div class="radar-list-controls-row">
+                  <select id="radarListSelect" class="clean-select radar-list-select" aria-label="Select watchlist for scan">
+                    <option value="global">Global Watchlist</option>
+                  </select>
+                  <button type="button" id="radarCreateListBtn" class="icon-plus-btn" title="Create New Studio List" aria-label="Create new list">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                  <button type="button" id="openWatchlistModalBtn" class="action-btn-secondary watchlist-trigger-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Manage (<strong id="radarWatchlistCount">0</strong>)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -777,11 +808,11 @@
               </svg>
             </div>
             <div class="modal-app-titles">
-              <h2 class="modal-title">Competitor Studio Watchlist</h2>
+              <h2 class="modal-title">Competitor Studio Watchlists</h2>
               <div class="modal-meta-row">
-                <span class="modal-dev">Monitored Studios: <strong id="watchlistModalCount">0</strong> / 100 max</span>
+                <span class="modal-dev">Active List: <strong id="activeListModalName">Global Watchlist</strong> (<strong id="watchlistModalCount">0</strong> studios)</span>
                 <span class="meta-separator">•</span>
-                <span class="pill-chip">Persisted in Data Store</span>
+                <span class="pill-chip">Saved Locally (Safe on Git Pull)</span>
               </div>
             </div>
           </div>
@@ -794,10 +825,77 @@
         </header>
 
         <div class="modal-body watchlist-modal-body">
+          <!-- Multi-List Tabs Bar + Create New List (+) -->
+          <div class="watchlist-lists-manager">
+            <div class="watchlist-tabs-bar">
+              <div id="watchlistTabsContainer" class="watchlist-tabs-scroll">
+                <!-- List pills dynamically rendered -->
+              </div>
+              <button type="button" id="modalCreateListBtn" class="list-add-pill-btn" title="Create a new custom list">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>New List</span>
+              </button>
+            </div>
+
+            <!-- Inline Form for Creating or Renaming a List -->
+            <div id="modalListNameForm" class="modal-list-name-form" style="display: none;">
+              <input type="text" id="modalListNameInput" class="clean-text-input" placeholder="Enter list name (e.g. Hyper Casual, Racing)..." autocomplete="off">
+              <button type="button" id="modalListNameSaveBtn" class="action-btn-primary small">Save List</button>
+              <button type="button" id="modalListNameCancelBtn" class="action-btn-secondary small">Cancel</button>
+            </div>
+
+            <!-- Active List Rules Hint & Action Buttons -->
+            <div class="active-list-toolbar">
+              <span id="activeListRuleHint" class="active-list-rule-hint">
+                Master Global list — contains all tracked competitor studios.
+              </span>
+              <div class="active-list-actions">
+                <button type="button" id="toggleCopyListBtn" class="action-btn-secondary small" title="Copy companies to another list or create a duplicate list">
+                  <span>📋 Copy List</span>
+                </button>
+                <button type="button" id="renameActiveListBtn" class="action-btn-secondary small" style="display: none;" title="Rename current list">
+                  <span>✏️ Rename</span>
+                </button>
+                <button type="button" id="deleteActiveListBtn" class="action-btn-danger small" style="display: none;" title="Delete current list (Global stays safe)">
+                  <span>Delete List</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Copy List Panel -->
+            <div id="copyListPanel" class="copy-list-panel" style="display: none;">
+              <div class="copy-list-header">
+                <strong>Copy Companies Between Lists</strong>
+                <span class="copy-list-sub">Copy all studios from one list into another existing list or duplicate into a brand-new list.</span>
+              </div>
+              <div class="copy-list-grid">
+                <div class="copy-field">
+                  <label for="copySourceSelect">Copy From:</label>
+                  <select id="copySourceSelect" class="clean-select"></select>
+                </div>
+                <div class="copy-field">
+                  <label for="copyTargetSelect">Copy Into:</label>
+                  <select id="copyTargetSelect" class="clean-select"></select>
+                </div>
+              </div>
+              <div id="copyNewNameWrap" class="copy-new-name-wrap" style="display: none;">
+                <input type="text" id="copyNewListNameInput" class="clean-text-input" placeholder="Enter name for the new copied list (e.g. Hyper Casual Copy)..." autocomplete="off">
+              </div>
+              <div class="copy-list-footer">
+                <button type="button" id="executeCopyListBtn" class="action-btn-primary small">Copy Studios Now</button>
+                <button type="button" id="cancelCopyListBtn" class="action-btn-secondary small">Cancel</button>
+              </div>
+            </div>
+          </div>
+
           <!-- Add Studio Section -->
           <div class="watchlist-add-section">
             <div class="watchlist-single-add">
-              <input type="text" id="newStudioInput" class="clean-text-input" placeholder="Add studio name (e.g. SayGames, Voodoo, Rollic, Supersonic)..." autocomplete="off">
+              <input type="text" id="newStudioInput" list="globalStudiosDatalist" class="clean-text-input" placeholder="Add studio name (e.g. SayGames, Voodoo, Rollic, Supersonic)..." autocomplete="off">
+              <datalist id="globalStudiosDatalist"></datalist>
               <button type="button" id="addSingleStudioBtn" class="action-btn-primary small">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -824,13 +922,13 @@
                   <line x1="12" y1="18" x2="12" y2="12"></line>
                   <line x1="9" y1="15" x2="15" y2="15"></line>
                 </svg>
-                <span>Bulk Import (Paste up to 100 studios separated by commas or lines)</span>
+                <span>Bulk Import (Paste studios separated by commas or lines)</span>
               </summary>
               <div class="bulk-import-form">
                 <textarea id="bulkStudioTextarea" class="clean-textarea" rows="4" placeholder="Paste studio names here, for example:&#10;VOODOO&#10;SayGames Ltd&#10;Rollic Games&#10;Supersonic Studios LTD&#10;CrazyLabs LTD&#10;Azur Interactive Games Limited&#10;Lion Studios..."></textarea>
                 <div class="bulk-import-actions">
-                  <button type="button" id="importBulkBtn" class="action-btn-primary small">Import List</button>
-                  <span class="bulk-hint">Duplicates and blank lines will be cleaned automatically.</span>
+                  <button type="button" id="importBulkBtn" class="action-btn-primary small">Import to Active List</button>
+                  <span class="bulk-hint">Duplicates cleaned &amp; automatically synced to Global.</span>
                 </div>
               </div>
             </details>
@@ -840,10 +938,10 @@
           <div class="watchlist-listing-section">
             <div class="watchlist-listing-header">
               <div class="listing-header-left">
-                <h3>Currently Monitored Studios (<span id="chipsCountBadge">0</span>)</h3>
-                <span class="listing-subtitle">These companies are scanned in parallel during every Launch Radar check.</span>
+                <h3>Studios in <span id="activeListHeadingName">Global Watchlist</span> (<span id="chipsCountBadge">0</span>)</h3>
+                <span class="listing-subtitle">These companies are scanned when this list is active in Launch Radar.</span>
               </div>
-              <button type="button" id="clearAllWatchlistBtn" class="action-btn-danger small">Clear All</button>
+              <button type="button" id="clearAllWatchlistBtn" class="action-btn-danger small">Clear List</button>
             </div>
 
             <div id="watchlistChipsContainer" class="watchlist-chips-grid">
@@ -858,7 +956,7 @@
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            <span>Scan Radar Now</span>
+            <span>Scan Active List Now</span>
           </button>
           <button type="button" id="watchlistDoneBtn" class="action-btn-secondary">Done</button>
         </footer>
@@ -866,6 +964,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.9"></script>
+  <script src="app.js?v=3.0"></script>
 </body>
 </html>

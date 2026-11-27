@@ -1688,8 +1688,8 @@ body {
 
 /* Wide Modal for Watchlist */
 .modal-card-wide {
-  max-width: 780px;
-  max-height: 88vh;
+  max-width: 840px;
+  max-height: 90vh;
 }
 
 .modal-header-icon-pill {
@@ -2057,7 +2057,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 255px);
 }
 
 .sidebar-companies-scroll::-webkit-scrollbar {
@@ -2395,5 +2395,300 @@ body {
 @media (max-width: 800px) {
   .perf-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==========================================================================
+   Multi-List Watchlist Switcher, Sub-Lists & Copy Panel
+   ========================================================================== */
+.sidebar-list-switcher {
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sidebar-list-select-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sidebar-list-select {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.38rem 0.55rem;
+  color: var(--text-primary);
+  font-size: 0.775rem;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.sidebar-list-select:focus {
+  border-color: var(--border-focus);
+}
+
+.icon-plus-btn {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(37, 99, 235, 0.14);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #60a5fa;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.icon-plus-btn:hover {
+  background: var(--accent-blue);
+  color: #ffffff;
+  border-color: var(--accent-blue);
+}
+
+.sidebar-new-list-form {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sidebar-new-list-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-focus);
+  border-radius: var(--radius-sm);
+  padding: 0.32rem 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.sidebar-inline-save-btn {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.32rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sidebar-inline-cancel-btn {
+  background: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.45rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.radar-list-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.radar-list-select {
+  min-width: 175px;
+}
+
+/* Watchlist Modal Multi-List Controls */
+.watchlist-lists-manager {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.watchlist-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.watchlist-tabs-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  overflow-x: auto;
+  flex: 1;
+  padding-bottom: 2px;
+}
+
+.list-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.list-tab-pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.list-tab-pill.active {
+  background: rgba(37, 99, 235, 0.16);
+  border-color: rgba(59, 130, 246, 0.55);
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.list-tab-count {
+  font-size: 0.7rem;
+  background: rgba(148, 163, 184, 0.15);
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-full);
+}
+
+.list-tab-pill.active .list-tab-count {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+.list-add-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--accent-blue);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 0.36rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.list-add-pill-btn:hover {
+  opacity: 0.9;
+}
+
+.modal-list-name-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.active-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.active-list-rule-hint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.active-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.action-btn-secondary.small {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+/* Copy List Panel */
+.copy-list-panel {
+  background: var(--bg-card);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.copy-list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.copy-list-header strong {
+  font-size: 0.825rem;
+  color: var(--text-primary);
+}
+
+.copy-list-sub {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+}
+
+.copy-list-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.copy-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.copy-field label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.copy-new-name-wrap {
+  display: flex;
+}
+
+.copy-list-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .copy-list-grid {
+    grid-template-columns: 1fr;
   }
 }

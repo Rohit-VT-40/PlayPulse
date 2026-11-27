@@ -9,7 +9,10 @@ const state = {
   titleFilter: '',
   activeView: 'cards', // 'cards' | 'table'
   selectedApp: null,
-  watchlist: []
+  watchlist: [],
+  watchlists: [],
+  activeListId: 'global',
+  listFormMode: null // 'create' | 'rename'
 };
 
 // DOM Elements
@@ -35,15 +38,37 @@ const radarTimeframe = document.getElementById('radarTimeframe');
 const radarCustomDateFields = document.getElementById('radarCustomDateFields');
 const radarStartDate = document.getElementById('radarStartDate');
 const radarEndDate = document.getElementById('radarEndDate');
+const radarListSelect = document.getElementById('radarListSelect');
+const radarCreateListBtn = document.getElementById('radarCreateListBtn');
 const openWatchlistModalBtn = document.getElementById('openWatchlistModalBtn');
 const radarWatchlistCount = document.getElementById('radarWatchlistCount');
 
 // Watchlist Modal Elements
 const watchlistModal = document.getElementById('watchlistModal');
 const watchlistCloseBtn = document.getElementById('watchlistCloseBtn');
+const activeListModalName = document.getElementById('activeListModalName');
 const watchlistModalCount = document.getElementById('watchlistModalCount');
+const activeListHeadingName = document.getElementById('activeListHeadingName');
 const chipsCountBadge = document.getElementById('chipsCountBadge');
+const watchlistTabsContainer = document.getElementById('watchlistTabsContainer');
+const modalCreateListBtn = document.getElementById('modalCreateListBtn');
+const modalListNameForm = document.getElementById('modalListNameForm');
+const modalListNameInput = document.getElementById('modalListNameInput');
+const modalListNameSaveBtn = document.getElementById('modalListNameSaveBtn');
+const modalListNameCancelBtn = document.getElementById('modalListNameCancelBtn');
+const activeListRuleHint = document.getElementById('activeListRuleHint');
+const toggleCopyListBtn = document.getElementById('toggleCopyListBtn');
+const renameActiveListBtn = document.getElementById('renameActiveListBtn');
+const deleteActiveListBtn = document.getElementById('deleteActiveListBtn');
+const copyListPanel = document.getElementById('copyListPanel');
+const copySourceSelect = document.getElementById('copySourceSelect');
+const copyTargetSelect = document.getElementById('copyTargetSelect');
+const copyNewNameWrap = document.getElementById('copyNewNameWrap');
+const copyNewListNameInput = document.getElementById('copyNewListNameInput');
+const executeCopyListBtn = document.getElementById('executeCopyListBtn');
+const cancelCopyListBtn = document.getElementById('cancelCopyListBtn');
 const newStudioInput = document.getElementById('newStudioInput');
+const globalStudiosDatalist = document.getElementById('globalStudiosDatalist');
 const addSingleStudioBtn = document.getElementById('addSingleStudioBtn');
 const presetHypercasualBtn = document.getElementById('presetHypercasualBtn');
 const presetPuzzleBtn = document.getElementById('presetPuzzleBtn');
@@ -58,6 +83,12 @@ const watchlistDoneBtn = document.getElementById('watchlistDoneBtn');
 // Left Sidebar Elements
 const leftWatchlistSidebar = document.getElementById('leftWatchlistSidebar');
 const sidebarWatchlistBadge = document.getElementById('sidebarWatchlistBadge');
+const sidebarListSelect = document.getElementById('sidebarListSelect');
+const sidebarCreateListBtn = document.getElementById('sidebarCreateListBtn');
+const sidebarNewListForm = document.getElementById('sidebarNewListForm');
+const sidebarNewListInput = document.getElementById('sidebarNewListInput');
+const sidebarNewListSaveBtn = document.getElementById('sidebarNewListSaveBtn');
+const sidebarNewListCancelBtn = document.getElementById('sidebarNewListCancelBtn');
 const sidebarFilterInput = document.getElementById('sidebarFilterInput');
 const sidebarCompaniesList = document.getElementById('sidebarCompaniesList');
 const sidebarManageBtn = document.getElementById('sidebarManageBtn');
@@ -238,10 +269,16 @@ function setupEventListeners() {
   if (radarTimeframe) {
     radarTimeframe.addEventListener('change', toggleRadarDateFields);
   }
+  if (radarListSelect) {
+    radarListSelect.addEventListener('change', (e) => switchActiveList(e.target.value));
+  }
+  if (radarCreateListBtn) {
+    radarCreateListBtn.addEventListener('click', () => openWatchlistModal('create'));
+  }
 
   // Watchlist Modal events
   if (openWatchlistModalBtn) {
-    openWatchlistModalBtn.addEventListener('click', openWatchlistModal);
+    openWatchlistModalBtn.addEventListener('click', () => openWatchlistModal());
   }
   if (watchlistCloseBtn) {
     watchlistCloseBtn.addEventListener('click', closeWatchlistModal);
@@ -252,6 +289,56 @@ function setupEventListeners() {
   if (watchlistModal) {
     watchlistModal.addEventListener('click', (e) => {
       if (e.target === watchlistModal) closeWatchlistModal();
+    });
+  }
+  if (modalCreateListBtn) {
+    modalCreateListBtn.addEventListener('click', () => showModalListForm('create'));
+  }
+  if (renameActiveListBtn) {
+    renameActiveListBtn.addEventListener('click', () => showModalListForm('rename'));
+  }
+  if (modalListNameSaveBtn) {
+    modalListNameSaveBtn.addEventListener('click', handleModalListFormSave);
+  }
+  if (modalListNameInput) {
+    modalListNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleModalListFormSave();
+      } else if (e.key === 'Escape') {
+        hideModalListForm();
+      }
+    });
+  }
+  if (modalListNameCancelBtn) {
+    modalListNameCancelBtn.addEventListener('click', hideModalListForm);
+  }
+  if (deleteActiveListBtn) {
+    deleteActiveListBtn.addEventListener('click', handleDeleteActiveList);
+  }
+  if (toggleCopyListBtn) {
+    toggleCopyListBtn.addEventListener('click', toggleCopyPanel);
+  }
+  if (cancelCopyListBtn) {
+    cancelCopyListBtn.addEventListener('click', () => {
+      if (copyListPanel) copyListPanel.style.display = 'none';
+    });
+  }
+  if (copySourceSelect) {
+    copySourceSelect.addEventListener('change', updateCopyTargetOptions);
+  }
+  if (copyTargetSelect) {
+    copyTargetSelect.addEventListener('change', updateCopyNewNameVisibility);
+  }
+  if (executeCopyListBtn) {
+    executeCopyListBtn.addEventListener('click', handleExecuteCopyList);
+  }
+  if (copyNewListNameInput) {
+    copyNewListNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleExecuteCopyList();
+      }
     });
   }
   if (closeAndScanBtn) {
@@ -304,6 +391,48 @@ function setupEventListeners() {
   }
 
   // Sidebar events
+  if (sidebarListSelect) {
+    sidebarListSelect.addEventListener('change', (e) => switchActiveList(e.target.value));
+  }
+  if (sidebarCreateListBtn) {
+    sidebarCreateListBtn.addEventListener('click', () => {
+      if (!sidebarNewListForm) return;
+      const isVisible = sidebarNewListForm.style.display !== 'none';
+      sidebarNewListForm.style.display = isVisible ? 'none' : 'flex';
+      if (!isVisible && sidebarNewListInput) {
+        sidebarNewListInput.value = '';
+        sidebarNewListInput.focus();
+      }
+    });
+  }
+  if (sidebarNewListCancelBtn) {
+    sidebarNewListCancelBtn.addEventListener('click', () => {
+      if (sidebarNewListForm) sidebarNewListForm.style.display = 'none';
+    });
+  }
+  if (sidebarNewListSaveBtn) {
+    sidebarNewListSaveBtn.addEventListener('click', async () => {
+      const ok = await createNewList(sidebarNewListInput ? sidebarNewListInput.value : '');
+      if (ok && sidebarNewListForm) {
+        sidebarNewListForm.style.display = 'none';
+        if (sidebarNewListInput) sidebarNewListInput.value = '';
+      }
+    });
+  }
+  if (sidebarNewListInput) {
+    sidebarNewListInput.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const ok = await createNewList(sidebarNewListInput.value);
+        if (ok && sidebarNewListForm) {
+          sidebarNewListForm.style.display = 'none';
+          sidebarNewListInput.value = '';
+        }
+      } else if (e.key === 'Escape') {
+        if (sidebarNewListForm) sidebarNewListForm.style.display = 'none';
+      }
+    });
+  }
   if (sidebarFilterInput && sidebarCompaniesList) {
     sidebarFilterInput.addEventListener('input', (e) => {
       const term = e.target.value.toLowerCase().trim();
@@ -315,7 +444,7 @@ function setupEventListeners() {
     });
   }
   if (sidebarManageBtn) {
-    sidebarManageBtn.addEventListener('click', openWatchlistModal);
+    sidebarManageBtn.addEventListener('click', () => openWatchlistModal());
   }
 
   // Toolbar events
@@ -544,9 +673,10 @@ async function executeRadarScan() {
   };
 
   const timeframeLabel = timeframeLabels[timeframe] || 'Selected Window';
-  const studioCount = state.watchlist.length || 10;
+  const activeList = getActiveList();
+  const studioCount = state.watchlist.length;
 
-  state.currentQuery = `Competitor Launch Radar — ${timeframeLabel}`;
+  state.currentQuery = `Competitor Launch Radar — ${activeList.name} (${timeframeLabel})`;
 
   // Show Loading UI
   welcomeContainer.style.display = 'none';
@@ -559,7 +689,7 @@ async function executeRadarScan() {
   notificationBanner.style.display = 'none';
 
   loadingContainer.style.display = 'flex';
-  loadingTitle.textContent = `Scanning Competitor Launch Radar...`;
+  loadingTitle.textContent = `Scanning ${activeList.name}...`;
   loadingSubtitle.textContent = `Inspecting ${studioCount} monitored competitor studios for new releases within ${timeframeLabel}...`;
 
   const btnText = searchSubmitBtn.querySelector('.btn-text');
@@ -572,7 +702,12 @@ async function executeRadarScan() {
     const response = await fetch('/api/radar/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ timeframe, startDate, endDate })
+      body: JSON.stringify({
+        timeframe,
+        startDate,
+        endDate,
+        listId: state.activeListId
+      })
     });
     const data = await response.json();
 
@@ -582,8 +717,8 @@ async function executeRadarScan() {
 
     handleSearchResults({
       ...data,
-      query: `Launch Radar (${timeframeLabel})`,
-      resolvedCompany: `Competitor Launch Radar (${studioCount} Monitored Studios)`
+      query: `Launch Radar (${activeList.name} • ${timeframeLabel})`,
+      resolvedCompany: `${activeList.name} (${studioCount} Monitored Studios)`
     });
   } catch (err) {
     console.error('Radar scan error:', err);
@@ -598,7 +733,33 @@ async function executeRadarScan() {
   }
 }
 
-// Watchlist Helpers
+// Watchlist & Multi-List Helpers
+function getActiveList() {
+  return state.watchlists.find(l => l.id === state.activeListId) || state.watchlists[0] || {
+    id: 'global',
+    name: 'Global Watchlist',
+    isGlobal: true,
+    companies: state.watchlist || []
+  };
+}
+
+function getGlobalList() {
+  return state.watchlists.find(l => l.isGlobal || l.id === 'global') || getActiveList();
+}
+
+function applyWatchlistResponse(data) {
+  if (!data || !data.success) return;
+  if (Array.isArray(data.lists)) {
+    state.watchlists = data.lists;
+  }
+  if (data.activeListId) {
+    state.activeListId = data.activeListId;
+  }
+  const active = getActiveList();
+  state.watchlist = active ? [...(active.companies || [])] : (data.companies || []);
+  updateWatchlistDisplay();
+}
+
 function toggleRadarDateFields() {
   if (!radarCustomDateFields) return;
   const isCustom = radarTimeframe.value === 'custom';
@@ -616,16 +777,245 @@ async function fetchWatchlist() {
   try {
     const res = await fetch('/api/radar/watchlist');
     const data = await res.json();
-    if (data.success && Array.isArray(data.companies || data.watchlist)) {
-      state.watchlist = data.companies || data.watchlist;
-      updateWatchlistDisplay();
+    if (data.success) {
+      if (!Array.isArray(data.lists)) {
+        data.lists = [{
+          id: 'global',
+          name: 'Global Watchlist',
+          isGlobal: true,
+          companies: data.companies || data.watchlist || []
+        }];
+      }
+      applyWatchlistResponse(data);
     }
   } catch (err) {
     console.error('Failed to fetch watchlist:', err);
   }
 }
 
+async function switchActiveList(listId) {
+  if (!listId) return;
+  state.activeListId = listId;
+  const active = getActiveList();
+  state.watchlist = active ? [...(active.companies || [])] : [];
+  updateWatchlistDisplay();
+
+  try {
+    const res = await fetch('/api/radar/lists/active', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listId })
+    });
+    const data = await res.json();
+    if (data.success) applyWatchlistResponse(data);
+  } catch (err) {
+    console.error('Error switching active list:', err);
+  }
+}
+
+async function createNewList(name) {
+  const clean = (name || '').trim();
+  if (!clean) return false;
+  try {
+    const res = await fetch('/api/radar/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: clean })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert(data.error || 'Could not create list.');
+      return false;
+    }
+    applyWatchlistResponse(data);
+    return true;
+  } catch (err) {
+    console.error('Error creating list:', err);
+    return false;
+  }
+}
+
+function showModalListForm(mode) {
+  state.listFormMode = mode;
+  if (!modalListNameForm || !modalListNameInput) return;
+  const active = getActiveList();
+  modalListNameForm.style.display = 'flex';
+  modalListNameInput.value = mode === 'rename' ? active.name : '';
+  modalListNameInput.placeholder = mode === 'rename'
+    ? 'Rename list...'
+    : 'Enter new list name (e.g. Hyper Casual, Racing)...';
+  if (modalListNameSaveBtn) {
+    modalListNameSaveBtn.textContent = mode === 'rename' ? 'Update Name' : 'Create List';
+  }
+  modalListNameInput.focus();
+}
+
+function hideModalListForm() {
+  state.listFormMode = null;
+  if (modalListNameForm) modalListNameForm.style.display = 'none';
+  if (modalListNameInput) modalListNameInput.value = '';
+}
+
+async function handleModalListFormSave() {
+  if (!modalListNameInput) return;
+  const name = modalListNameInput.value.trim();
+  if (!name) return;
+
+  if (state.listFormMode === 'rename') {
+    const active = getActiveList();
+    try {
+      const res = await fetch(`/api/radar/lists/${encodeURIComponent(active.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to rename list.');
+        return;
+      }
+      applyWatchlistResponse(data);
+      hideModalListForm();
+    } catch (err) {
+      console.error('Rename error:', err);
+    }
+  } else {
+    const ok = await createNewList(name);
+    if (ok) hideModalListForm();
+  }
+}
+
+async function handleDeleteActiveList() {
+  const active = getActiveList();
+  if (!active || active.isGlobal || active.id === 'global') return;
+
+  if (!confirm(`Delete the list "${active.name}"?\n\nYour companies inside this list will remain safely preserved in Global Watchlist.`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/radar/lists/${encodeURIComponent(active.id)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert(data.error || 'Failed to delete list.');
+      return;
+    }
+    applyWatchlistResponse(data);
+  } catch (err) {
+    console.error('Delete list error:', err);
+  }
+}
+
+function toggleCopyPanel() {
+  if (!copyListPanel) return;
+  const isOpen = copyListPanel.style.display !== 'none';
+  if (isOpen) {
+    copyListPanel.style.display = 'none';
+  } else {
+    populateCopySelects();
+    copyListPanel.style.display = 'flex';
+  }
+}
+
+function populateCopySelects() {
+  if (!copySourceSelect || !copyTargetSelect) return;
+  const lists = state.watchlists || [];
+
+  copySourceSelect.innerHTML = '';
+  lists.forEach(list => {
+    const opt = document.createElement('option');
+    opt.value = list.id;
+    opt.textContent = `${list.isGlobal ? '🌐' : '📁'} ${list.name} (${list.companies.length})`;
+    if (list.id === state.activeListId) opt.selected = true;
+    copySourceSelect.appendChild(opt);
+  });
+
+  updateCopyTargetOptions();
+}
+
+function updateCopyTargetOptions() {
+  if (!copySourceSelect || !copyTargetSelect) return;
+  const sourceId = copySourceSelect.value;
+  const lists = state.watchlists || [];
+  const sourceList = lists.find(l => l.id === sourceId);
+
+  copyTargetSelect.innerHTML = '';
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__';
+  newOpt.textContent = '➕ Create Brand-New Copied List...';
+  copyTargetSelect.appendChild(newOpt);
+
+  lists.forEach(list => {
+    if (list.id === sourceId) return;
+    const opt = document.createElement('option');
+    opt.value = list.id;
+    opt.textContent = `${list.isGlobal ? '🌐' : '📁'} ${list.name} (${list.companies.length})`;
+    copyTargetSelect.appendChild(opt);
+  });
+
+  // If other lists exist, leave default as __new__ or first other list; __new__ is super intuitive
+  if (copyNewListNameInput && sourceList) {
+    copyNewListNameInput.value = `${sourceList.name} (Copy)`;
+  }
+  updateCopyNewNameVisibility();
+}
+
+function updateCopyNewNameVisibility() {
+  if (!copyTargetSelect || !copyNewNameWrap) return;
+  const isNew = copyTargetSelect.value === '__new__';
+  copyNewNameWrap.style.display = isNew ? 'flex' : 'none';
+}
+
+async function handleExecuteCopyList() {
+  if (!copySourceSelect || !copyTargetSelect) return;
+  const sourceListId = copySourceSelect.value;
+  const targetListId = copyTargetSelect.value;
+  const newListName = targetListId === '__new__' && copyNewListNameInput
+    ? copyNewListNameInput.value.trim()
+    : '';
+
+  if (targetListId === '__new__' && !newListName) {
+    alert('Please enter a name for the new copied list.');
+    if (copyNewListNameInput) copyNewListNameInput.focus();
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/radar/lists/copy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceListId, targetListId, newListName })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert(data.error || 'Failed to copy list.');
+      return;
+    }
+    applyWatchlistResponse(data);
+    if (copyListPanel) copyListPanel.style.display = 'none';
+  } catch (err) {
+    console.error('Copy list error:', err);
+  }
+}
+
+function populateListDropdown(selectEl, lists, activeId) {
+  if (!selectEl) return;
+  selectEl.innerHTML = '';
+  lists.forEach(list => {
+    const opt = document.createElement('option');
+    opt.value = list.id;
+    opt.textContent = `${list.isGlobal ? '🌐' : '📁'} ${list.name} (${list.companies.length})`;
+    if (list.id === activeId) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+
 function updateWatchlistDisplay() {
+  const activeList = getActiveList();
+  const lists = state.watchlists.length > 0 ? state.watchlists : [activeList];
+
   // Sort watchlist in strict alphabetical order (A to Z)
   const sorted = [...state.watchlist].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
   const count = sorted.length;
@@ -634,19 +1024,69 @@ function updateWatchlistDisplay() {
   if (watchlistModalCount) watchlistModalCount.textContent = count;
   if (chipsCountBadge) chipsCountBadge.textContent = count;
   if (sidebarWatchlistBadge) sidebarWatchlistBadge.textContent = count;
+  if (activeListModalName) activeListModalName.textContent = activeList.name;
+  if (activeListHeadingName) activeListHeadingName.textContent = activeList.name;
+
+  // Sync sidebar & radar dropdowns
+  populateListDropdown(sidebarListSelect, lists, state.activeListId);
+  populateListDropdown(radarListSelect, lists, state.activeListId);
+
+  // Sync Global studios datalist autocomplete
+  if (globalStudiosDatalist) {
+    const globalCompanies = [...(getGlobalList().companies || [])].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
+    globalStudiosDatalist.innerHTML = '';
+    globalCompanies.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      globalStudiosDatalist.appendChild(opt);
+    });
+  }
+
+  // Update Modal List Tabs
+  if (watchlistTabsContainer) {
+    watchlistTabsContainer.innerHTML = '';
+    lists.forEach(list => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `list-tab-pill${list.id === state.activeListId ? ' active' : ''}`;
+      btn.innerHTML = `
+        <span>${list.isGlobal ? '🌐' : '📁'} ${escapeHtml(list.name)}</span>
+        <span class="list-tab-count">${list.companies.length}</span>
+      `;
+      btn.addEventListener('click', () => switchActiveList(list.id));
+      watchlistTabsContainer.appendChild(btn);
+    });
+  }
+
+  // Update contextual rule hint & custom list controls
+  const isGlobal = Boolean(activeList.isGlobal || activeList.id === 'global');
+  if (activeListRuleHint) {
+    activeListRuleHint.textContent = isGlobal
+      ? '🌐 Master Global list — removing a studio here deletes it from Global.'
+      : `📁 Custom list "${activeList.name}" — adding studios auto-syncs to Global; removing keeps Global safe.`;
+  }
+  if (renameActiveListBtn) renameActiveListBtn.style.display = isGlobal ? 'none' : 'inline-flex';
+  if (deleteActiveListBtn) deleteActiveListBtn.style.display = isGlobal ? 'none' : 'inline-flex';
+
+  // Refresh copy panel dropdowns if currently visible
+  if (copyListPanel && copyListPanel.style.display !== 'none') {
+    populateCopySelects();
+  }
 
   // 1. Render Modal Chips (Alphabetical order)
   if (watchlistChipsContainer) {
     watchlistChipsContainer.innerHTML = '';
     if (count === 0) {
-      watchlistChipsContainer.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem 0;">No studios in watchlist. Add some above or use 1-click presets!</span>`;
+      watchlistChipsContainer.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem 0;">No studios in "${escapeHtml(activeList.name)}". Add studios above, use presets, or copy from another list!</span>`;
     } else {
       sorted.forEach(company => {
         const chip = document.createElement('div');
         chip.className = 'company-chip';
         chip.innerHTML = `
           <span class="company-chip-name">${escapeHtml(company)}</span>
-          <button type="button" class="company-chip-remove" title="Remove ${escapeHtml(company)}" aria-label="Remove ${escapeHtml(company)}">
+          <button type="button" class="company-chip-remove" title="Remove ${escapeHtml(company)} from ${escapeHtml(activeList.name)}" aria-label="Remove ${escapeHtml(company)}">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -662,15 +1102,19 @@ function updateWatchlistDisplay() {
   }
 
   // 2. Render Left Sidebar List (Alphabetical order with scroll)
+  const sidebarTerm = sidebarFilterInput ? sidebarFilterInput.value.toLowerCase().trim() : '';
   if (sidebarCompaniesList) {
     sidebarCompaniesList.innerHTML = '';
     if (count === 0) {
-      sidebarCompaniesList.innerHTML = `<span style="font-size: 0.75rem; color: var(--text-muted); padding: 0.75rem; text-align: center; display: block;">No studios added yet.</span>`;
+      sidebarCompaniesList.innerHTML = `<span style="font-size: 0.75rem; color: var(--text-muted); padding: 0.75rem; text-align: center; display: block;">No studios in this list yet.</span>`;
     } else {
       sorted.forEach(company => {
         const item = document.createElement('div');
         item.className = 'sidebar-company-item';
         item.dataset.company = company;
+        if (sidebarTerm && !company.toLowerCase().includes(sidebarTerm)) {
+          item.style.display = 'none';
+        }
         const initial = company.charAt(0).toUpperCase();
 
         item.innerHTML = `
@@ -701,17 +1145,26 @@ function updateWatchlistDisplay() {
   }
 }
 
-function openWatchlistModal() {
+function openWatchlistModal(initialAction = null) {
   if (watchlistModal) {
     watchlistModal.style.display = 'flex';
-    fetchWatchlist();
-    if (newStudioInput) newStudioInput.focus();
+    hideModalListForm();
+    if (copyListPanel) copyListPanel.style.display = 'none';
+    fetchWatchlist().then(() => {
+      if (initialAction === 'create') {
+        showModalListForm('create');
+      } else if (newStudioInput) {
+        newStudioInput.focus();
+      }
+    });
   }
 }
 
 function closeWatchlistModal() {
   if (watchlistModal) {
     watchlistModal.style.display = 'none';
+    hideModalListForm();
+    if (copyListPanel) copyListPanel.style.display = 'none';
   }
 }
 
@@ -723,12 +1176,11 @@ async function handleAddSingleStudio() {
     const res = await fetch('/api/radar/watchlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company: name })
+      body: JSON.stringify({ company: name, listId: state.activeListId })
     });
     const data = await res.json();
     if (data.success) {
-      state.watchlist = data.companies || data.watchlist || [];
-      updateWatchlistDisplay();
+      applyWatchlistResponse(data);
       if (newStudioInput) newStudioInput.value = '';
     } else {
       alert(data.error || 'Failed to add studio.');
@@ -754,12 +1206,11 @@ async function addPresetStudios(studios) {
     const res = await fetch('/api/radar/watchlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ companies: studios })
+      body: JSON.stringify({ companies: studios, listId: state.activeListId })
     });
     const data = await res.json();
     if (data.success) {
-      state.watchlist = data.companies || data.watchlist || [];
-      updateWatchlistDisplay();
+      applyWatchlistResponse(data);
     }
   } catch (err) {
     console.error('Error bulk adding studios:', err);
@@ -771,12 +1222,11 @@ async function removeCompanyFromWatchlist(company) {
     const res = await fetch('/api/radar/watchlist', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company })
+      body: JSON.stringify({ company, listId: state.activeListId })
     });
     const data = await res.json();
     if (data.success) {
-      state.watchlist = data.companies || data.watchlist || [];
-      updateWatchlistDisplay();
+      applyWatchlistResponse(data);
     }
   } catch (err) {
     console.error('Error removing studio:', err);
@@ -784,18 +1234,23 @@ async function removeCompanyFromWatchlist(company) {
 }
 
 async function handleClearWatchlist() {
-  if (!confirm('Are you sure you want to clear all studios from your competitor watchlist?')) return;
+  const active = getActiveList();
+  const isGlobal = Boolean(active.isGlobal || active.id === 'global');
+  const confirmMsg = isGlobal
+    ? 'Clear ALL studios from the Master Global Watchlist?'
+    : `Clear all studios from "${active.name}"?\n\n(Your studios will remain safe in Global Watchlist.)`;
+
+  if (!confirm(confirmMsg)) return;
 
   try {
     const res = await fetch('/api/radar/watchlist', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clearAll: true })
+      body: JSON.stringify({ clearAll: true, listId: state.activeListId })
     });
     const data = await res.json();
     if (data.success) {
-      state.watchlist = data.companies || data.watchlist || [];
-      updateWatchlistDisplay();
+      applyWatchlistResponse(data);
     }
   } catch (err) {
     console.error('Error clearing watchlist:', err);

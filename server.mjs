@@ -606,48 +606,190 @@ app.get('/api/trending', async (req, res) => {
   }
 });
 
-// Watchlist File Helpers
-function loadWatchlist() {
-  try {
-    if (fs.existsSync(WATCHLIST_PATH)) {
-      const content = fs.readFileSync(WATCHLIST_PATH, 'utf8');
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) return parsed;
+// Watchlist Multi-List File Helpers
+function dedupeCompanies(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const result = [];
+  for (const item of list) {
+    const clean = typeof item === 'string' ? item.trim() : '';
+    if (!clean) continue;
+    const key = clean.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(clean);
     }
-
-    // Seed local user watchlist from default template on first run so Git pulls never overwrite user edits
-    if (fs.existsSync(DEFAULT_WATCHLIST_PATH)) {
-      const defaultContent = fs.readFileSync(DEFAULT_WATCHLIST_PATH, 'utf8');
-      const parsedDefault = JSON.parse(defaultContent);
-      if (Array.isArray(parsedDefault)) {
-        saveWatchlist(parsedDefault);
-        return parsedDefault;
-      }
-    }
-  } catch (err) {
-    console.error('Error loading watchlist:', err);
   }
-  const fallback = [
+  return result;
+}
+
+function getFallbackCompanies() {
+  return [
     "Virtualize Technologies",
     "VOODOO",
     "SayGames Ltd",
     "Rollic Games",
     "Lion Studios"
   ];
-  saveWatchlist(fallback);
-  return fallback;
 }
 
-function saveWatchlist(list) {
+function normalizeWatchlistData(raw) {
+  // Migrate legacy flat array format into Multi-List format seamlessly
+  if (Array.isArray(raw)) {
+    return {
+      activeListId: 'global',
+      lists: [
+        {
+          id: 'global',
+          name: 'Global Watchlist',
+          isGlobal: true,
+          companies: dedupeCompanies(raw)
+        }
+      ]
+    };
+  }
+
+  if (raw && Array.isArray(raw.lists)) {
+    let globalList = raw.lists.find(l => l && (l.id === 'global' || l.isGlobal));
+    const customLists = raw.lists
+      .filter(l => l && l.id && l.id !== 'global' && !l.isGlobal && typeof l.name === 'string')
+      .map(l => ({
+        id: String(l.id).trim(),
+        name: l.name.trim(),
+        isGlobal: false,
+        companies: dedupeCompanies(l.companies)
+      }));
+
+    if (!globalList) {
+      globalList = {
+        id: 'global',
+        name: 'Global Watchlist',
+        isGlobal: true,
+        companies: getFallbackCompanies()
+      };
+    } else {
+      globalList = {
+        id: 'global',
+        name: 'Global Watchlist',
+        isGlobal: true,
+        companies: dedupeCompanies(globalList.companies)
+      };
+    }
+
+    const lists = [globalList, ...customLists];
+    const hasActive = lists.some(l => l.id === raw.activeListId);
+
+    return {
+      activeListId: hasActive ? raw.activeListId : 'global',
+      lists
+    };
+  }
+
+  return null;
+}
+
+function loadWatchlistData() {
+  try {
+    if (fs.existsSync(WATCHLIST_PATH)) {
+      const content = fs.readFileSync(WATCHLIST_PATH, 'utf8');
+      const parsed = JSON.parse(content);
+      const normalized = normalizeWatchlistData(parsed);
+      if (normalized) {
+        // Persist normalized object if migrated from legacy array
+        if (Array.isArray(parsed)) {
+          saveWatchlistData(normalized);
+        }
+        return normalized;
+      }
+    }
+
+    // Seed local user watchlist from default template on first run so Git pulls never overwrite user edits
+    if (fs.existsSync(DEFAULT_WATCHLIST_PATH)) {
+      const defaultContent = fs.readFileSync(DEFAULT_WATCHLIST_PATH, 'utf8');
+      const parsedDefault = JSON.parse(defaultContent);
+      const normalized = normalizeWatchlistData(parsedDefault);
+      if (normalized) {
+        saveWatchlistData(normalized);
+        return normalized;
+      }
+    }
+  } catch (err) {
+    console.error('Error loading watchlist:', err);
+  }
+
+  const fallbackData = normalizeWatchlistData(getFallbackCompanies());
+  saveWatchlistData(fallbackData);
+  return fallbackData;
+}
+
+function loadWatchlist(listId = null) {
+  const data = loadWatchlistData();
+  const targetId = listId || data.activeListId || 'global';
+  const targetList = data.lists.find(l => l.id === targetId) || data.lists[0];
+  return targetList ? targetList.companies : [];
+}
+
+function saveWatchlistData(data) {
   try {
     const dir = path.dirname(WATCHLIST_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(WATCHLIST_PATH, JSON.stringify(list, null, 2), 'utf8');
+    fs.writeFileSync(WATCHLIST_PATH, JSON.stringify(data, null, 2), 'utf8');
     return true;
   } catch (err) {
     console.error('Error saving watchlist:', err);
     return false;
   }
+}
+
+function mergeCompaniesIntoList(targetList, incomingCompanies) {
+  const existingSet = new Set(targetList.companies.map(c => c.toLowerCase()));
+  const addedItems = [];
+  for (const raw of incomingCompanies) {
+    const clean = typeof raw === 'string' ? raw.trim() : '';
+    if (!clean) continue;
+    const key = clean.toLowerCase();
+    if (!existingSet.has(key)) {
+      existingSet.add(key);
+      targetList.companies.push(clean);
+      addedItems.push(clean);
+    }
+  }
+  return addedItems;
+}
+
+function syncCompaniesToGlobal(data, companies) {
+  const globalList = data.lists.find(l => l.id === 'global' || l.isGlobal);
+  if (!globalList) return [];
+  return mergeCompaniesIntoList(globalList, companies);
+}
+
+function generateUniqueListId(name, existingLists) {
+  const baseSlug = (name || 'list')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'custom-list';
+  let candidate = baseSlug;
+  let counter = 2;
+  const usedIds = new Set(existingLists.map(l => l.id));
+  usedIds.add('global');
+  usedIds.add('__new__');
+  while (usedIds.has(candidate)) {
+    candidate = `${baseSlug}-${counter++}`;
+  }
+  return candidate;
+}
+
+function buildWatchlistPayload(data, extra = {}) {
+  const activeList = data.lists.find(l => l.id === data.activeListId) || data.lists[0];
+  return {
+    success: true,
+    activeListId: activeList.id,
+    activeListName: activeList.name,
+    lists: data.lists,
+    count: activeList.companies.length,
+    companies: activeList.companies,
+    ...extra
+  };
 }
 
 // Developer catalog resolution helper
@@ -701,15 +843,30 @@ async function resolveAndFetchDeveloperApps(companyName) {
   return { company: qClean, apps: [] };
 }
 
-// Endpoint 1.7: Watchlist Management (Get, Add, Delete)
+// Endpoint 1.7: Watchlist & Multi-List Management
 app.get('/api/radar/watchlist', (req, res) => {
-  const list = loadWatchlist();
-  res.json({ success: true, count: list.length, companies: list });
+  const data = loadWatchlistData();
+  const requestedId = (req.query.listId || '').trim();
+  const listObj = requestedId ? data.lists.find(l => l.id === requestedId) : null;
+  if (listObj) {
+    return res.json(buildWatchlistPayload(data, {
+      count: listObj.companies.length,
+      companies: listObj.companies
+    }));
+  }
+  res.json(buildWatchlistPayload(data));
 });
 
+// Add studio(s) to a specific list (auto-syncs to Global if added to a sub-list)
 app.post('/api/radar/watchlist', (req, res) => {
-  const { companies, company } = req.body || {};
-  let currentList = loadWatchlist();
+  const { companies, company, listId } = req.body || {};
+  const data = loadWatchlistData();
+  const targetId = (listId || data.activeListId || 'global').trim();
+  const targetList = data.lists.find(l => l.id === targetId);
+
+  if (!targetList) {
+    return res.status(404).json({ success: false, error: 'Target list not found.' });
+  }
 
   let toAdd = [];
   if (Array.isArray(companies)) {
@@ -720,57 +877,236 @@ app.post('/api/radar/watchlist', (req, res) => {
     toAdd = companies.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
   }
 
-  let addedCount = 0;
-  for (const item of toAdd) {
-    const clean = (item || '').trim();
-    if (clean && !currentList.some(existing => existing.toLowerCase() === clean.toLowerCase())) {
-      currentList.push(clean);
-      addedCount++;
-    }
+  const addedToTarget = mergeCompaniesIntoList(targetList, toAdd);
+
+  // Business Rule: Any company added to a sub-list is automatically ensured in Global too
+  let syncedToGlobal = [];
+  if (targetList.id !== 'global' && toAdd.length > 0) {
+    syncedToGlobal = syncCompaniesToGlobal(data, toAdd);
   }
 
-  saveWatchlist(currentList);
-  res.json({ success: true, added: addedCount, count: currentList.length, companies: currentList });
+  saveWatchlistData(data);
+  res.json(buildWatchlistPayload(data, {
+    added: addedToTarget.length,
+    syncedToGlobal: syncedToGlobal.length,
+    targetListId: targetList.id,
+    count: targetList.companies.length,
+    companies: targetList.companies
+  }));
 });
 
+// Remove studio(s) ONLY from the specified list (never deletes from Global unless listId === 'global')
 app.delete('/api/radar/watchlist', (req, res) => {
   const companyToRemove = (req.query.company || (req.body && req.body.company) || '').trim().toLowerCase();
   const clearAll = req.query.all === 'true' || (req.body && (req.body.all === true || req.body.clearAll === true));
+  const targetId = (req.query.listId || (req.body && req.body.listId) || '').trim();
 
-  if (clearAll) {
-    saveWatchlist([]);
-    return res.json({ success: true, count: 0, companies: [] });
+  const data = loadWatchlistData();
+  const resolvedId = targetId || data.activeListId || 'global';
+  const targetList = data.lists.find(l => l.id === resolvedId);
+
+  if (!targetList) {
+    return res.status(404).json({ success: false, error: 'Target list not found.' });
   }
 
-  let currentList = loadWatchlist();
-  const initialLength = currentList.length;
-  currentList = currentList.filter(c => c.toLowerCase() !== companyToRemove);
+  if (clearAll) {
+    const prevCount = targetList.companies.length;
+    targetList.companies = [];
+    saveWatchlistData(data);
+    return res.json(buildWatchlistPayload(data, {
+      deleted: prevCount,
+      targetListId: targetList.id,
+      count: 0,
+      companies: []
+    }));
+  }
 
-  saveWatchlist(currentList);
-  res.json({
-    success: true,
-    deleted: initialLength - currentList.length,
-    count: currentList.length,
-    companies: currentList
-  });
+  const initialLength = targetList.companies.length;
+  targetList.companies = targetList.companies.filter(c => c.toLowerCase() !== companyToRemove);
+
+  saveWatchlistData(data);
+  res.json(buildWatchlistPayload(data, {
+    deleted: initialLength - targetList.companies.length,
+    targetListId: targetList.id,
+    count: targetList.companies.length,
+    companies: targetList.companies
+  }));
+});
+
+// Create a new custom sub-list
+app.post('/api/radar/lists', (req, res) => {
+  const { name, companies } = req.body || {};
+  const cleanName = typeof name === 'string' ? name.trim() : '';
+  if (!cleanName) {
+    return res.status(400).json({ success: false, error: 'List name is required.' });
+  }
+
+  const data = loadWatchlistData();
+  const duplicate = data.lists.some(l => l.name.toLowerCase() === cleanName.toLowerCase());
+  if (duplicate) {
+    return res.status(400).json({ success: false, error: `A list named "${cleanName}" already exists.` });
+  }
+
+  const id = generateUniqueListId(cleanName, data.lists);
+  const initialCompanies = dedupeCompanies(Array.isArray(companies) ? companies : []);
+  const newList = {
+    id,
+    name: cleanName,
+    isGlobal: false,
+    companies: initialCompanies
+  };
+
+  data.lists.push(newList);
+  data.activeListId = id;
+
+  if (initialCompanies.length > 0) {
+    syncCompaniesToGlobal(data, initialCompanies);
+  }
+
+  saveWatchlistData(data);
+  res.json(buildWatchlistPayload(data, { createdList: newList }));
+});
+
+// Switch active list (persisted across browser refresh)
+app.post('/api/radar/lists/active', (req, res) => {
+  const { listId } = req.body || {};
+  const data = loadWatchlistData();
+  const target = data.lists.find(l => l.id === listId);
+
+  if (!target) {
+    return res.status(404).json({ success: false, error: 'Selected list not found.' });
+  }
+
+  data.activeListId = target.id;
+  saveWatchlistData(data);
+  res.json(buildWatchlistPayload(data));
+});
+
+// Rename a custom sub-list
+app.patch('/api/radar/lists/:id', (req, res) => {
+  const listId = req.params.id;
+  const cleanName = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+  if (!cleanName) {
+    return res.status(400).json({ success: false, error: 'New list name is required.' });
+  }
+
+  const data = loadWatchlistData();
+  const target = data.lists.find(l => l.id === listId);
+  if (!target) {
+    return res.status(404).json({ success: false, error: 'List not found.' });
+  }
+  if (target.isGlobal || target.id === 'global') {
+    return res.status(400).json({ success: false, error: 'Global Watchlist cannot be renamed.' });
+  }
+
+  const duplicate = data.lists.some(l => l.id !== listId && l.name.toLowerCase() === cleanName.toLowerCase());
+  if (duplicate) {
+    return res.status(400).json({ success: false, error: `A list named "${cleanName}" already exists.` });
+  }
+
+  target.name = cleanName;
+  saveWatchlistData(data);
+  res.json(buildWatchlistPayload(data));
+});
+
+// Delete a custom sub-list (Global companies remain intact!)
+app.delete('/api/radar/lists/:id', (req, res) => {
+  const listId = req.params.id;
+  const data = loadWatchlistData();
+  const target = data.lists.find(l => l.id === listId);
+
+  if (!target) {
+    return res.status(404).json({ success: false, error: 'List not found.' });
+  }
+  if (target.isGlobal || target.id === 'global') {
+    return res.status(400).json({ success: false, error: 'Global Watchlist cannot be deleted.' });
+  }
+
+  data.lists = data.lists.filter(l => l.id !== listId);
+  if (data.activeListId === listId) {
+    data.activeListId = 'global';
+  }
+
+  saveWatchlistData(data);
+  res.json(buildWatchlistPayload(data));
+});
+
+// Copy companies from one list into another existing list or a brand-new list
+app.post('/api/radar/lists/copy', (req, res) => {
+  const { sourceListId, targetListId, newListName } = req.body || {};
+  const data = loadWatchlistData();
+
+  const sourceList = data.lists.find(l => l.id === sourceListId);
+  if (!sourceList) {
+    return res.status(404).json({ success: false, error: 'Source list not found.' });
+  }
+
+  let copiedCount = 0;
+  let targetList = null;
+
+  if (targetListId === '__new__' || (typeof newListName === 'string' && newListName.trim())) {
+    const cleanNewName = (newListName || `${sourceList.name} (Copy)`).trim();
+    const duplicate = data.lists.some(l => l.name.toLowerCase() === cleanNewName.toLowerCase());
+    if (duplicate) {
+      return res.status(400).json({ success: false, error: `A list named "${cleanNewName}" already exists.` });
+    }
+
+    const newId = generateUniqueListId(cleanNewName, data.lists);
+    targetList = {
+      id: newId,
+      name: cleanNewName,
+      isGlobal: false,
+      companies: [...sourceList.companies]
+    };
+    data.lists.push(targetList);
+    copiedCount = targetList.companies.length;
+    data.activeListId = newId;
+  } else {
+    targetList = data.lists.find(l => l.id === targetListId);
+    if (!targetList) {
+      return res.status(404).json({ success: false, error: 'Destination list not found.' });
+    }
+    if (targetList.id === sourceList.id) {
+      return res.status(400).json({ success: false, error: 'Source and destination lists must be different.' });
+    }
+
+    const added = mergeCompaniesIntoList(targetList, sourceList.companies);
+    copiedCount = added.length;
+    if (targetList.id !== 'global') {
+      syncCompaniesToGlobal(data, sourceList.companies);
+    }
+    data.activeListId = targetList.id;
+  }
+
+  saveWatchlistData(data);
+  res.json(buildWatchlistPayload(data, {
+    copiedCount,
+    sourceListName: sourceList.name,
+    targetListId: targetList.id,
+    targetListName: targetList.name
+  }));
 });
 
 // Endpoint 1.8: Competitor Launch Radar Scanner (Custom Calendar & Presets)
 app.post('/api/radar/scan', async (req, res) => {
   try {
-    const { timeframe, startDate, endDate, companies: customCompanies } = req.body || {};
-    
-    // Determine target company list
+    const { timeframe, startDate, endDate, listId, companies: customCompanies } = req.body || {};
+
+    // Determine target company list from requested listId or active list
+    const data = loadWatchlistData();
+    const activeListObj = data.lists.find(l => l.id === (listId || data.activeListId)) || data.lists[0];
     const companyList = (Array.isArray(customCompanies) && customCompanies.length > 0)
       ? customCompanies
-      : loadWatchlist();
+      : (activeListObj ? activeListObj.companies : []);
 
     if (companyList.length === 0) {
       return res.json({
         success: true,
         mode: 'radar',
+        activeListId: activeListObj ? activeListObj.id : 'global',
+        activeListName: activeListObj ? activeListObj.name : 'Watchlist',
         timeframe: timeframe || 'all',
-        dateRange: 'No companies in watchlist',
+        dateRange: 'No companies in selected list',
         companiesScanned: 0,
         totalLaunches: 0,
         apps: [],
@@ -812,7 +1148,12 @@ app.post('/api/radar/scan', async (req, res) => {
     const cacheKey = `radar:${tf}:${startTs}:${endTs}:${companyList.slice().sort().join(',')}`;
     const cached = getFromCache(cacheKey);
     if (cached) {
-      return res.json({ ...cached, fromCache: true });
+      return res.json({
+        ...cached,
+        activeListId: activeListObj ? activeListObj.id : 'global',
+        activeListName: activeListObj ? activeListObj.name : 'Global Watchlist',
+        fromCache: true
+      });
     }
 
     // Process companies in parallel chunks
@@ -869,6 +1210,8 @@ app.post('/api/radar/scan', async (req, res) => {
     const responsePayload = {
       success: true,
       mode: 'radar',
+      activeListId: activeListObj ? activeListObj.id : 'global',
+      activeListName: activeListObj ? activeListObj.name : 'Global Watchlist',
       timeframe: tf,
       dateRange: rangeLabel,
       startDate: startDate || null,
