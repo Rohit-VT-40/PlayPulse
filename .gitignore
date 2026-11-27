@@ -1,6 +1,9 @@
 # Dependency directories
 node_modules/
 
+# Local user data (prevents overwriting managers/CEO added companies on git pull)
+data/watchlist.json
+
 # Logs
 logs/
 *.log

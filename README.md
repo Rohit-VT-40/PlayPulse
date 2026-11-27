@@ -84,7 +84,8 @@ Clicking on any game card opens the modal directly to the **Performance & Veloci
 ```text
 PlayPulse/
 ├── data/
-│   └── watchlist.json       # Monitored competitor game studios
+│   ├── watchlist.default.json # Starter template (tracked in Git)
+│   └── watchlist.json         # Local user watchlist (auto-created, Git-ignored)
 ├── public/
 │   ├── index.html           # Main dashboard interface
 │   ├── style.css            # SaaS design system & responsive styling

@@ -9,6 +9,7 @@ import gplay from 'google-play-scraper';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WATCHLIST_PATH = path.join(__dirname, 'data', 'watchlist.json');
+const DEFAULT_WATCHLIST_PATH = path.join(__dirname, 'data', 'watchlist.default.json');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -613,16 +614,28 @@ function loadWatchlist() {
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) return parsed;
     }
+
+    // Seed local user watchlist from default template on first run so Git pulls never overwrite user edits
+    if (fs.existsSync(DEFAULT_WATCHLIST_PATH)) {
+      const defaultContent = fs.readFileSync(DEFAULT_WATCHLIST_PATH, 'utf8');
+      const parsedDefault = JSON.parse(defaultContent);
+      if (Array.isArray(parsedDefault)) {
+        saveWatchlist(parsedDefault);
+        return parsedDefault;
+      }
+    }
   } catch (err) {
     console.error('Error loading watchlist:', err);
   }
-  return [
+  const fallback = [
     "Virtualize Technologies",
     "VOODOO",
     "SayGames Ltd",
     "Rollic Games",
     "Lion Studios"
   ];
+  saveWatchlist(fallback);
+  return fallback;
 }
 
 function saveWatchlist(list) {
@@ -940,6 +953,7 @@ app.get('/api/app/:id', async (req, res) => {
 });
 
 app.listen(PORT, () => {
+  loadWatchlist();
   console.log(`\n=================================================`);
   console.log(`🚀 Play Store Intelligence Dashboard Running!`);
   console.log(`👉 Access URL: http://localhost:${PORT}`);
