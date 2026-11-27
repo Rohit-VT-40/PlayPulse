@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlayPulse — Mobile Game Market Intelligence & Store Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2.9">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Navigation -->
+    <header class="top-nav">
+      <div class="brand-group">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title-row">
+            <span class="brand-title">PlayPulse</span>
+            <span class="brand-badge">Intelligence</span>
+          </div>
+          <p class="brand-subtitle">Google Play Game Analytics & Real-Time Intelligence</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-indicator" title="Connected to Google Play live index">
+          <span class="pulse-dot"></span>
+          <span class="status-text">Store Index Live</span>
+        </div>
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle color theme" aria-label="Toggle theme">
+          <svg id="themeIconSun" class="theme-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="themeIconMoon" class="theme-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Master Layout Body with Left Radar Sidebar -->
+    <div class="layout-body-wrapper">
+      <!-- Left Sidebar: Monitored Studios (Launch Radar Watchlist) -->
+      <aside class="left-watchlist-sidebar" id="leftWatchlistSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-group">
+            <div class="sidebar-icon-wrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10"></path>
+                <line x1="12" y1="12" x2="19" y2="5"></line>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+            <div>
+              <span class="sidebar-heading">Monitored Studios</span>
+              <span class="sidebar-subheading">Launch Radar Watchlist</span>
+            </div>
+          </div>
+          <span class="sidebar-count-badge" id="sidebarWatchlistBadge">0</span>
+        </div>
+
+        <div class="sidebar-filter-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sidebar-search-icon">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="sidebarFilterInput" placeholder="Filter studios (A–Z)..." class="sidebar-filter-input" autocomplete="off" spellcheck="false">
+        </div>
+
+        <!-- Alphabetical list, scrollable -->
+        <div class="sidebar-companies-scroll" id="sidebarCompaniesList">
+          <!-- Rendered in A-Z order -->
+        </div>
+
+        <div class="sidebar-footer">
+          <button type="button" id="sidebarManageBtn" class="sidebar-manage-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>+ Add / Manage Studios</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Container -->
+      <main class="main-content">
+      <!-- Search & Discovery Console -->
+      <section class="search-section">
+        <div class="search-panel">
+          <div class="mode-tabs-container">
+            <button class="mode-tab active" data-mode="company">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <line x1="9" y1="6" x2="9.01" y2="6"></line>
+                <line x1="15" y1="6" x2="15.01" y2="6"></line>
+                <line x1="9" y1="10" x2="9.01" y2="10"></line>
+                <line x1="15" y1="10" x2="15.01" y2="10"></line>
+                <line x1="9" y1="14" x2="9.01" y2="14"></line>
+                <line x1="15" y1="14" x2="15.01" y2="14"></line>
+                <line x1="9" y1="18" x2="15" y2="18"></line>
+              </svg>
+              <span>Publisher Catalog</span>
+            </button>
+            <button class="mode-tab" data-mode="keyword">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span>Keyword & Game Theme</span>
+            </button>
+            <button class="mode-tab" data-mode="trending">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+              </svg>
+              <span>Trending & Top Charts</span>
+            </button>
+            <button class="mode-tab" data-mode="radar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10"></path>
+                <line x1="12" y1="12" x2="19" y2="5"></line>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <span>Launch Radar</span>
+            </button>
+          </div>
+
+          <form id="searchForm" class="search-form">
+            <div id="standardSearchInputs" class="standard-inputs-wrap">
+              <div class="search-input-box">
+                <span class="search-icon-adornment">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </span>
+                <input 
+                  type="text" 
+                  id="searchInput" 
+                  placeholder="Search publisher name (e.g. Voodoo, Supercell, Ketchapp)..." 
+                  autocomplete="off"
+                  spellcheck="false"
+                  required
+                >
+                <button type="button" id="clearSearchBtn" class="clear-search-btn" title="Clear input" style="display: none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="search-actions">
+                <div class="depth-selector-group">
+                  <label for="depthSelect">Index Depth:</label>
+                  <select id="depthSelect" class="clean-select">
+                    <option value="400" selected>Standard (~400 games)</option>
+                    <option value="800">Extended (~800 games)</option>
+                    <option value="1500">Deep (~1,500 games)</option>
+                    <option value="all">Uncapped (Full Universe)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trending Controls (Shown when Trending mode is selected) -->
+            <div id="trendingControls" class="trending-controls-wrap" style="display: none;">
+              <div class="trending-filter-field">
+                <label for="trendingCountry">Country / Region:</label>
+                <select id="trendingCountry" class="clean-select">
+                  <option value="us" selected>🇺🇸 United States (US)</option>
+                  <option value="in">🇮🇳 India (IN)</option>
+                  <option value="gb">🇬🇧 United Kingdom (GB)</option>
+                  <option value="ca">🇨🇦 Canada (CA)</option>
+                  <option value="de">🇩🇪 Germany (DE)</option>
+                  <option value="br">🇧🇷 Brazil (BR)</option>
+                  <option value="jp">🇯🇵 Japan (JP)</option>
+                  <option value="kr">🇰🇷 South Korea (KR)</option>
+                </select>
+              </div>
+
+              <div class="trending-filter-field">
+                <label for="trendingCategory">Game Genre:</label>
+                <select id="trendingCategory" class="clean-select">
+                  <option value="GAME" selected>All Game Categories</option>
+                  <option value="GAME_PUZZLE">Puzzle</option>
+                  <option value="GAME_CASUAL">Casual</option>
+                  <option value="GAME_ACTION">Action</option>
+                  <option value="GAME_ARCADE">Arcade</option>
+                  <option value="GAME_SIMULATION">Simulation</option>
+                  <option value="GAME_STRATEGY">Strategy</option>
+                  <option value="GAME_RACING">Racing</option>
+                  <option value="GAME_BOARD">Board</option>
+                  <option value="GAME_CARD">Card</option>
+                  <option value="GAME_ROLE_PLAYING">Role Playing</option>
+                </select>
+              </div>
+
+              <div class="trending-filter-field">
+                <label for="trendingCollection">Chart Type:</label>
+                <select id="trendingCollection" class="clean-select">
+                  <option value="TOP_FREE" selected>Top Free Trending</option>
+                  <option value="GROSSING">Top Grossing (Revenue)</option>
+                  <option value="TOP_PAID">Top Paid</option>
+                </select>
+              </div>
+
+              <div class="trending-filter-field">
+                <label for="trendingLimit">Chart Size:</label>
+                <select id="trendingLimit" class="clean-select">
+                  <option value="25">Top 25 Titles</option>
+                  <option value="50" selected>Top 50 Titles</option>
+                  <option value="100">Top 100 Titles</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Radar Controls (Shown when Launch Radar mode is selected) -->
+            <div id="radarControls" class="radar-controls-wrap" style="display: none;">
+              <div class="radar-filter-field">
+                <label for="radarTimeframe">Launch Window:</label>
+                <select id="radarTimeframe" class="clean-select">
+                  <option value="today">Today (Last 24 Hours)</option>
+                  <option value="week">Past Week (7 Days)</option>
+                  <option value="month" selected>Past Month (30 Days)</option>
+                  <option value="year">Past Year (12 Months)</option>
+                  <option value="custom">Custom Date Range 📅</option>
+                </select>
+              </div>
+
+              <div id="radarCustomDateFields" class="radar-filter-field radar-dates-inline" style="display: none;">
+                <div class="date-input-group">
+                  <label for="radarStartDate">From:</label>
+                  <input type="date" id="radarStartDate" class="clean-date-input">
+                </div>
+                <div class="date-input-group">
+                  <label for="radarEndDate">To:</label>
+                  <input type="date" id="radarEndDate" class="clean-date-input">
+                </div>
+              </div>
+
+              <div class="radar-filter-field watchlist-btn-field">
+                <label>Monitored Studios:</label>
+                <button type="button" id="openWatchlistModalBtn" class="action-btn-secondary watchlist-trigger-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <span>Competitor Watchlist (<strong id="radarWatchlistCount">0</strong>)</span>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="searchSubmitBtn" class="action-btn-primary">
+              <span class="btn-text">Search Catalog</span>
+              <span class="btn-loader" style="display: none;">
+                <span class="spinner-circle"></span> Fetching...
+              </span>
+            </button>
+          </form>
+
+          <!-- Quick Filters / Suggestions -->
+          <div class="suggestions-row">
+            <span class="suggestions-title">Quick Search:</span>
+            <div class="suggestions-list" id="quickTags">
+              <button class="suggestion-chip" data-query="Voodoo" data-mode="company">Voodoo</button>
+              <button class="suggestion-chip" data-query="Supercell" data-mode="company">Supercell</button>
+              <button class="suggestion-chip" data-query="Ketchapp" data-mode="company">Ketchapp</button>
+              <button class="suggestion-chip" data-query="SayGames" data-mode="company">SayGames</button>
+              <button class="suggestion-chip" data-query="sand" data-mode="keyword">sand</button>
+              <button class="suggestion-chip" data-query="arrow" data-mode="keyword">arrow</button>
+              <button class="suggestion-chip" data-query="us-trending" data-mode="trending">US Top Free</button>
+              <button class="suggestion-chip" data-query="us-puzzle" data-mode="trending">US Puzzle Trends</button>
+              <button class="suggestion-chip" data-query="in-trending" data-mode="trending">India Top Free</button>
+              <button class="suggestion-chip" data-query="radar-month" data-mode="radar">⚡ Radar: Past 30 Days</button>
+              <button class="suggestion-chip" data-query="radar-year" data-mode="radar">🚀 Radar: Past 12 Months</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alert / Fresh Release Notice -->
+      <section id="notificationBanner" class="alert-notice-banner" style="display: none;">
+        <div class="alert-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="alert-body">
+          <span class="alert-title" id="bannerTitle">New Releases Identified</span>
+          <p class="alert-subtitle" id="bannerText">Recent games launched in the last 12 months are highlighted below.</p>
+        </div>
+        <button id="bannerDismiss" class="alert-dismiss-btn" title="Dismiss">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </section>
+
+      <!-- Executive KPI Cards -->
+      <section id="statsSection" class="kpi-grid" style="display: none;">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Total Titles</span>
+            <div class="kpi-icon-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-metric" id="statTotalApps">0</span>
+          </div>
+          <span class="kpi-meta" id="statCompanyTitle">Active catalog</span>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Est. Cumulative Installs</span>
+            <div class="kpi-icon-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-metric" id="statTotalDownloads">0</span>
+          </div>
+          <span class="kpi-meta">Store milestones verified</span>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Average Score</span>
+            <div class="kpi-icon-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-metric" id="statAvgRating">0.0</span>
+          </div>
+          <span class="kpi-meta" id="statReviewsCount">0 total ratings</span>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Fresh Launches</span>
+            <div class="kpi-icon-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-metric" id="statNewReleases">0</span>
+          </div>
+          <span class="kpi-meta">Released in last 12 months</span>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Primary Category</span>
+            <div class="kpi-icon-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-row">
+            <span class="kpi-metric truncate-text" id="statTopGenre">-</span>
+          </div>
+          <span class="kpi-meta">Dominant market share</span>
+        </div>
+      </section>
+
+      <!-- Results Controls & Toolbar -->
+      <section id="toolbarSection" class="results-toolbar" style="display: none;">
+        <div class="toolbar-left-group">
+          <div class="filter-search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="filter-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="filterInput" placeholder="Filter current results by title..." class="sub-filter-input">
+          </div>
+
+          <div class="dropdown-wrapper">
+            <select id="genreFilterSelect" class="clean-select">
+              <option value="ALL">All Categories</option>
+            </select>
+          </div>
+
+          <label class="clean-toggle-label" id="titleOnlyToggleWrapper">
+            <input type="checkbox" id="titleOnlyCheckbox">
+            <span>Keyword in Title Only</span>
+          </label>
+        </div>
+
+        <div class="toolbar-right-group">
+          <div class="sort-control">
+            <label for="sortSelect">Sort By:</label>
+            <select id="sortSelect" class="clean-select">
+              <option value="chart">Official Chart Rank</option>
+              <option value="newest">Release Date (Newest)</option>
+              <option value="downloads" selected>Total Downloads (Highest)</option>
+              <option value="rating">Rating (Highest)</option>
+              <option value="updated">Last Updated (Recent)</option>
+              <option value="reviews">Total Reviews (Most)</option>
+              <option value="name">Title (A – Z)</option>
+            </select>
+          </div>
+
+          <div class="view-switch-group">
+            <button class="view-switch-btn active" id="viewCardsBtn" title="Cards View" aria-label="Cards View">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+              </svg>
+            </button>
+            <button class="view-switch-btn" id="viewTableBtn" title="Table View" aria-label="Table View">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <button id="exportCsvBtn" class="action-btn-secondary" title="Export current results as CSV spreadsheet">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Loading State -->
+      <div id="loadingContainer" class="state-container" style="display: none;">
+        <div class="loader-visual">
+          <div class="loader-spinner-ring"></div>
+        </div>
+        <h3 class="state-title" id="loadingTitle">Querying Google Play Index...</h3>
+        <p class="state-desc" id="loadingSubtitle">Aggregating package IDs, live installs, release timestamps, and user ratings.</p>
+      </div>
+
+      <!-- Empty State / Welcome Placeholder -->
+      <div id="welcomeContainer" class="state-container welcome-state">
+        <div class="welcome-icon-box">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <h3 class="state-title">Store Intelligence Console</h3>
+        <p class="state-desc">Select a search mode above to query any game publisher's complete portfolio or discover all matching titles across Google Play.</p>
+      </div>
+
+      <!-- Empty Search Matches State (Successful Query, 0 Games Found) -->
+      <div id="noResultsContainer" class="state-container no-results-state" style="display: none;">
+        <div class="no-results-icon-box">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+        </div>
+        <h3 class="state-title" id="noResultsTitle">No Games Found</h3>
+        <p class="state-desc" id="noResultsMessage">No games match the current criteria.</p>
+        <div id="noResultsActions" class="no-results-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+          <button type="button" id="noResultsActionBtn" class="action-btn-primary">Expand Release Window</button>
+        </div>
+      </div>
+
+      <!-- Error State (Only for technical connection/server failures) -->
+      <div id="errorContainer" class="state-container error-state" style="display: none;">
+        <div class="error-icon-box">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h3 class="state-title" id="errorTitle">Unable to Fetch Store Data</h3>
+        <p class="state-desc" id="errorMessage">Unable to retrieve data from the Google Play Store.</p>
+        <button id="retryBtn" class="action-btn-primary" style="margin-top: 1rem;">Retry Query</button>
+      </div>
+
+      <!-- Results Grid View -->
+      <div id="gamesGrid" class="games-grid" style="display: none;"></div>
+
+      <!-- Results Table View -->
+      <div id="gamesTableContainer" class="table-container" style="display: none;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">Rank</th>
+              <th>Application</th>
+              <th>Publisher</th>
+              <th>Installs</th>
+              <th>Rating</th>
+              <th>Reviews</th>
+              <th>Initial Launch</th>
+              <th>Last Updated</th>
+              <th>Category</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="gamesTableBody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+    <!-- App Detail & Live Reviews Drawer / Modal -->
+    <div id="appModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card">
+        <header class="modal-header">
+          <div class="modal-app-identity">
+            <img id="modalAppIcon" src="" alt="Icon" class="modal-app-icon">
+            <div class="modal-app-titles">
+              <h2 id="modalAppTitle" class="modal-title">Game Title</h2>
+              <div class="modal-meta-row">
+                <span id="modalAppDeveloper" class="modal-dev">Developer</span>
+                <span class="meta-separator">•</span>
+                <span id="modalAppGenre" class="pill-chip">Genre</span>
+                <span class="meta-separator">•</span>
+                <span id="modalAppInstalls" class="pill-chip installs">100M+ Downloads</span>
+              </div>
+            </div>
+          </div>
+          <button id="modalCloseBtn" class="modal-close-btn" title="Close" aria-label="Close modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-tab="performance">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+            <span>Performance & Velocity</span>
+          </button>
+          <button class="modal-tab" data-tab="reviews">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Live Reviews (<span id="modalReviewCountBadge">0</span>)</span>
+          </button>
+          <button class="modal-tab" data-tab="screenshots">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span>Store Media</span>
+          </button>
+          <button class="modal-tab" data-tab="details">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>Overview & Technical Data</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Tab 0: Performance & User Trends -->
+          <div id="tabPerformance" class="modal-tab-content active">
+            <!-- 4 KPI Cards for This Specific Game -->
+            <div class="perf-kpi-grid">
+              <div class="perf-kpi-card">
+                <div class="perf-kpi-header">
+                  <span class="perf-kpi-label">Active Players (DAU)</span>
+                  <span class="perf-badge active-badge">Daily</span>
+                </div>
+                <div class="perf-kpi-value-row">
+                  <span id="perfDauVal" class="perf-val">0</span>
+                </div>
+                <span class="perf-kpi-sub" id="perfDauSub">~0% of userbase</span>
+              </div>
+
+              <div class="perf-kpi-card">
+                <div class="perf-kpi-header">
+                  <span class="perf-kpi-label">Monthly Active (MAU)</span>
+                  <span class="perf-badge mau-badge">Monthly</span>
+                </div>
+                <div class="perf-kpi-value-row">
+                  <span id="perfMauVal" class="perf-val">0</span>
+                </div>
+                <span class="perf-kpi-sub" id="perfMauSub">Active in last 30d</span>
+              </div>
+
+              <div class="perf-kpi-card">
+                <div class="perf-kpi-header">
+                  <span class="perf-kpi-label">Inactive / Churned</span>
+                  <span class="perf-badge churn-badge">Inactive</span>
+                </div>
+                <div class="perf-kpi-value-row">
+                  <span id="perfChurnVal" class="perf-val">0</span>
+                </div>
+                <span class="perf-kpi-sub" id="perfChurnSub">Installed but inactive</span>
+              </div>
+
+              <div class="perf-kpi-card">
+                <div class="perf-kpi-header">
+                  <span class="perf-kpi-label">Download Momentum</span>
+                  <span id="perfTrendBadge" class="perf-trend-badge surging">🔥 Surging</span>
+                </div>
+                <div class="perf-kpi-value-row">
+                  <span id="perfGrowthRate" class="perf-val">+0%</span>
+                </div>
+                <span class="perf-kpi-sub" id="perfGrowthSub">Run-rate vs previous period</span>
+              </div>
+            </div>
+
+            <!-- Download Velocity Trend Chart Card -->
+            <div class="perf-chart-card">
+              <div class="perf-chart-header">
+                <div class="chart-header-left">
+                  <h3 class="chart-title">Download Velocity Trend</h3>
+                  <p class="chart-subtitle">Estimated weekly download momentum curve & run-rate (12-Week Velocity)</p>
+                </div>
+                <div class="chart-legend-row">
+                  <span class="legend-indicator dot-trend"></span>
+                  <span class="legend-label">Weekly Installs</span>
+                  <span class="legend-indicator dot-avg" style="margin-left: 0.65rem;"></span>
+                  <span class="legend-label">Moving Trend</span>
+                </div>
+              </div>
+
+              <!-- Interactive Vector Chart Container -->
+              <div id="perfChartSvgWrap" class="perf-chart-svg-wrap">
+                <!-- SVG dynamically rendered -->
+              </div>
+
+              <div class="chart-bottom-summary">
+                <div class="summary-pill">
+                  <span class="summary-key">Weekly Run-Rate:</span>
+                  <strong id="perfWeeklyVelocity">-</strong>
+                </div>
+                <div class="summary-pill">
+                  <span class="summary-key">Category Benchmark:</span>
+                  <span id="perfRetentionBench">D1: 38% • D7: 15% • D30: 5%</span>
+                </div>
+                <div class="summary-pill">
+                  <span class="summary-key">Revenue Profile:</span>
+                  <strong id="perfRevProfile">80% Ads • 20% IAP</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 1: Live Reviews -->
+          <div id="tabReviews" class="modal-tab-content">
+            <div class="reviews-header-card">
+              <div class="rating-overview">
+                <span id="modalRatingScore" class="rating-big-num">4.3</span>
+                <div>
+                  <div id="modalRatingStars" class="stars-gold">★★★★★</div>
+                  <span id="modalTotalReviewsText" class="reviews-count-meta">Based on verified reviews</span>
+                </div>
+              </div>
+              <button id="refreshReviewsBtn" class="action-btn-secondary small">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span>Refresh Feed</span>
+              </button>
+            </div>
+
+            <div id="reviewsLoading" class="reviews-loading-state" style="display: none;">
+              <span class="spinner-circle"></span> Fetching live reviews from Google Play...
+            </div>
+
+            <div id="reviewsList" class="reviews-feed"></div>
+          </div>
+
+          <!-- Tab 2: Screenshots -->
+          <div id="tabScreenshots" class="modal-tab-content">
+            <div id="screenshotsGallery" class="screenshots-grid"></div>
+          </div>
+
+          <!-- Tab 3: Details & Changelog -->
+          <div id="tabDetails" class="modal-tab-content">
+            <div class="tech-spec-grid">
+              <div class="tech-spec-cell">
+                <span class="spec-label">Initial Release Date</span>
+                <strong id="modalReleasedDate" class="spec-value">-</strong>
+              </div>
+              <div class="tech-spec-cell">
+                <span class="spec-label">Last Production Update</span>
+                <strong id="modalUpdatedDate" class="spec-value">-</strong>
+              </div>
+              <div class="tech-spec-cell">
+                <span class="spec-label">Current Version</span>
+                <strong id="modalVersion" class="spec-value">-</strong>
+              </div>
+              <div class="tech-spec-cell">
+                <span class="spec-label">Package Name (App ID)</span>
+                <strong id="modalAppId" class="spec-value monospace-font">com.example.app</strong>
+              </div>
+            </div>
+
+            <h4 class="spec-section-title">Store Description</h4>
+            <div id="modalDescription" class="store-description-prose"></div>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <a id="modalPlayStoreLink" href="#" target="_blank" rel="noopener noreferrer" class="action-btn-primary">
+            <span>Open on Google Play</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Competitor Watchlist Modal -->
+    <div id="watchlistModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card modal-card-wide">
+        <header class="modal-header">
+          <div class="modal-app-identity">
+            <div class="modal-header-icon-pill">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10"></path>
+                <line x1="12" y1="12" x2="19" y2="5"></line>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+            <div class="modal-app-titles">
+              <h2 class="modal-title">Competitor Studio Watchlist</h2>
+              <div class="modal-meta-row">
+                <span class="modal-dev">Monitored Studios: <strong id="watchlistModalCount">0</strong> / 100 max</span>
+                <span class="meta-separator">•</span>
+                <span class="pill-chip">Persisted in Data Store</span>
+              </div>
+            </div>
+          </div>
+          <button id="watchlistCloseBtn" class="modal-close-btn" title="Close" aria-label="Close modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+
+        <div class="modal-body watchlist-modal-body">
+          <!-- Add Studio Section -->
+          <div class="watchlist-add-section">
+            <div class="watchlist-single-add">
+              <input type="text" id="newStudioInput" class="clean-text-input" placeholder="Add studio name (e.g. SayGames, Voodoo, Rollic, Supersonic)..." autocomplete="off">
+              <button type="button" id="addSingleStudioBtn" class="action-btn-primary small">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Add Studio</span>
+              </button>
+            </div>
+
+            <!-- Quick Import Presets -->
+            <div class="watchlist-presets-row">
+              <span class="preset-label">1-Click Presets:</span>
+              <button type="button" class="preset-chip" id="presetHypercasualBtn">+ Hypercasual Leaders</button>
+              <button type="button" class="preset-chip" id="presetPuzzleBtn">+ Top Puzzle Studios</button>
+              <button type="button" class="preset-chip" id="presetIndiaBtn">+ Indian Top Studios</button>
+            </div>
+
+            <!-- Bulk Import Drawer -->
+            <details class="bulk-import-details">
+              <summary class="bulk-import-summary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <span>Bulk Import (Paste up to 100 studios separated by commas or lines)</span>
+              </summary>
+              <div class="bulk-import-form">
+                <textarea id="bulkStudioTextarea" class="clean-textarea" rows="4" placeholder="Paste studio names here, for example:&#10;VOODOO&#10;SayGames Ltd&#10;Rollic Games&#10;Supersonic Studios LTD&#10;CrazyLabs LTD&#10;Azur Interactive Games Limited&#10;Lion Studios..."></textarea>
+                <div class="bulk-import-actions">
+                  <button type="button" id="importBulkBtn" class="action-btn-primary small">Import List</button>
+                  <span class="bulk-hint">Duplicates and blank lines will be cleaned automatically.</span>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <!-- Currently Watched Studios Grid -->
+          <div class="watchlist-listing-section">
+            <div class="watchlist-listing-header">
+              <div class="listing-header-left">
+                <h3>Currently Monitored Studios (<span id="chipsCountBadge">0</span>)</h3>
+                <span class="listing-subtitle">These companies are scanned in parallel during every Launch Radar check.</span>
+              </div>
+              <button type="button" id="clearAllWatchlistBtn" class="action-btn-danger small">Clear All</button>
+            </div>
+
+            <div id="watchlistChipsContainer" class="watchlist-chips-grid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <footer class="modal-footer watchlist-modal-footer">
+          <button type="button" id="closeAndScanBtn" class="action-btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Scan Radar Now</span>
+          </button>
+          <button type="button" id="watchlistDoneBtn" class="action-btn-secondary">Done</button>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=2.9"></script>
+</body>
+</html>
