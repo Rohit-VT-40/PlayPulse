@@ -7,7 +7,18 @@ PlayPulse Intelligence is a full-featured market analytics and competitor intell
 
 ## 🚀 Quick Start (How to Run)
 
-Follow these simple steps to run this project on any system (Windows, macOS, or Linux):
+### ⚡ Option A: 1-Click Launch (Recommended for CEO & Managers)
+Make sure **Node.js** (v18+) is installed from [nodejs.org](https://nodejs.org):
+
+- **🪟 On Windows:** Double-click **`Start-PlayPulse.bat`** (you can right-click ➔ *Send to Desktop* for a Desktop icon).
+- **🍎 On macOS (MacBook):** Double-click **`Start-PlayPulse.command`** (you can drag an alias to Desktop/Dock).
+  - *First-time Mac security note:* If macOS warns about an unidentified script on the very first run, **Right-Click (or Control+Click) `Start-PlayPulse.command` ➔ Open** once. From then on, normal double-click works!
+
+Both launchers automatically install packages on first run, start the server, and open **`http://localhost:3000`** in your browser. Close the terminal window anytime to stop the server.
+
+---
+
+### 💻 Option B: Manual Terminal Setup (Windows / macOS / Linux)
 
 ### 1. Prerequisites
 - **Node.js**: Make sure Node.js (version 18 or higher) is installed on your system.  
@@ -91,7 +102,10 @@ PlayPulse/
 │   ├── style.css            # SaaS design system & responsive styling
 │   └── app.js               # Client state, SVG chart engine, API integration
 ├── server.mjs               # Express API proxy & scraper integration
+├── Start-PlayPulse.bat      # 1-Click Windows launcher (auto-install + auto-browser)
+├── Start-PlayPulse.command  # 1-Click macOS launcher (auto-install + auto-browser)
 ├── package.json             # NPM dependencies & startup scripts
+├── .gitattributes           # Preserves LF/CRLF endings for cross-OS launchers
 ├── .gitignore               # Excluded files (node_modules, logs)
 └── README.md                # Project documentation
 ```
